@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preparar LIVINCOME v18, revisión local</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#203630;background:#f7f6f1}*{box-sizing:border-box}body{margin:0;padding:42px 20px}.wrap{max-width:740px;margin:auto}.top{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:#49746b;font-weight:700}h1{font:normal clamp(2rem,5vw,3.1rem)/1.13 Georgia,serif;margin:16px 0 20px}p{line-height:1.65}main{background:#fff;border:1px solid #e0e7e0;border-radius:12px;padding:28px;box-shadow:0 16px 50px #1e42340b}button,.file-label{display:inline-block;border:0;border-radius:6px;background:#265d51;color:#fff;font-weight:700;padding:13px 18px;font-size:1rem;cursor:pointer}button:hover,.file-label:hover{background:#19463d}button:disabled{opacity:.5;cursor:wait}.file-label{background:#eff4f0;color:#29564b;border:1px solid #c5d8ce;margin-left:8px}input[type=file]{position:absolute;left:-10000px}.status{margin:22px 0 0;min-height:28px;font-size:.93rem;color:#33635a}.status.error{color:#ab3636}ul{padding-left:22px;line-height:1.85}.small{font-size:.86rem;color:#68776d}.note{margin-top:22px;padding-top:16px;border-top:1px solid #e5ebe6}strong{color:#173c35}a{color:#2a6357}code{background:#f0f3ee;padding:2px 5px;border-radius:3px}@media(max-width:570px){main{padding:20px}.file-label{margin:10px 0 0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top">LIVINCOME · revisión local · 18 noviembre 2026</div>
+<h1>Preparar la versión 18</h1>
+<main>
+<p>Genera un archivo HTML completo y autónomo con los cambios acordados. <strong>No modifica GitHub ni publica la web.</strong> La versión actual permanece intacta.</p>
+<ul>
+<li>Nuevo título en inglés y castellano.</li>
+<li>Corrección leve de la inclinación del mapa de portada.</li>
+<li>Incorporación de Mikel Navarro Satrústegui al equipo de trabajo, con perfil bilingüe y enlace a la EHU.</li>
+</ul>
+<p class="small">La ficha de Mikel utiliza provisionalmente el recuadro con sus iniciales: la foto visible en la ficha oficial de la EHU resulta ser un avatar genérico, no una fotografía real.</p>
+<button id="generate">Obtener y generar la v18</button>
+<label class="file-label" for="upload">O elegir una v17 local</label>
+<input type="file" id="upload" accept=".html,.htm,text/html">
+<div id="status" class="status" role="status" aria-live="polite"></div>
+<div class="note small">El archivo resultante se guardará en Descargas con el nombre <code>livincome-v18-revision.html</code> y podrás abrirlo en el navegador como la versión anterior. No se envía ningún dato a terceros; el programa solo descarga la web pública actual de GitHub, o lee el archivo que tú elijas.</div>
+</main>
+</div>
+<script>
+'use strict';
+const SOURCE='https://raw.githubusercontent.com/livincome-project/livincome-project.github.io/main/index.html';
+const oldEN='Making a Living: Household Income, Consumption and Living Costs in Spain from the Pre-industrial Economy to the Onset of Modern Economic Growth';
+const newEN='Making a Living: Household Income, Consumption and Living Costs in Spain from Pre-industrial Times to the Onset of Modern Economic Growth';
+const newES='Ganarse la vida: ingresos de los hogares, consumo y coste de la vida en España desde la época preindustrial hasta los inicios del crecimiento económico moderno';
+const $=id=>document.getElementById(id);
+function status(t,isError=false){$('status').textContent=t;$('status').className=isError?'status error':'status';}
+function patch(html){
+ if(!html.includes('const LANG='))throw Error('No se ha identificado el archivo de LIVINCOME.');
+ if(!html.includes(oldEN))throw Error('Este archivo no contiene el título de la v17. Quizá ya se haya modificado.');
+ html=html.replace(oldEN,newEN);
+ const key='const LANG=';const start=html.indexOf(key)+key.length;
+ let end=start,level=0,inString=false,escaped=false;
+ for(;end<html.length;end++){
+  const c=html[end];
+  if(inString){if(escaped)escaped=false;else if(c==='\\')escaped=true;else if(c==='"')inString=false;}
+  else if(c==='"')inString=true;
+  else if(c==='{')level++;
+  else if(c==='}'){level--;if(level===0){end++;break;}}
+ }
+ if(level!==0)throw Error('No se ha podido interpretar la configuración bilingüe.');
+ const LANG=JSON.parse(html.slice(start,end));
+ if(!LANG.en?.workPeople||!LANG.es?.workPeople)throw Error('La estructura del equipo no coincide con la v17.');
+ LANG.en.heroFull=newEN;
+ LANG.es.heroFull=newES;
+ LANG.en.peopleWork='Work team · Three members';
+ LANG.es.peopleWork='Equipo de trabajo · Tres integrantes';
+ const mikel={
+  id:'mikel',name:'Mikel Navarro Satrústegui',institution:'Universidad del País Vasco (EHU)',
+  webUrl:'https://ekoizpen-zientifikoa.ehu.eus/investigadores/1031071/detalle',webType:'academic'
+ };
+ if(!LANG.es.workPeople.some(p=>p.id==='mikel'))LANG.es.workPeople.push({...mikel,profile:'Mikel Navarro Satrústegui es doctor en Historia Económica por la Universidad del País Vasco (EHU, 2025). Su investigación se centra en el tiempo de trabajo, los salarios, la formación profesional y las trayectorias laborales en la industria siderúrgica preindustrial. Ha publicado estudios sobre las Reales Fábricas de Liérganes y La Cavada en el siglo XVIII.'});
+ if(!LANG.en.workPeople.some(p=>p.id==='mikel'))LANG.en.workPeople.push({...mikel,profile:'Mikel Navarro Satrústegui holds a PhD in Economic History from the University of the Basque Country (EHU, 2025). His research focuses on working time, wages, skill acquisition and career progression in the pre-industrial iron industry. He has published studies of the Royal Artillery Factories of Liérganes and La Cavada in the eighteenth century.'});
+ html=html.slice(0,start)+JSON.stringify(LANG)+html.slice(end);
+ html=html.replace('data-i18n="peopleWork">Work team · Two members','data-i18n="peopleWork">Work team · Three members');
+ const oldOrcid="const a=make('a','profile-orcid','ORCID ↗');a.href='https://orcid.org/'+p.orcid;a.target='_blank';a.rel='noopener noreferrer';links.append(a);";
+ if(!html.includes(oldOrcid))throw Error('No se encuentra el componente de perfiles esperado.');
+ html=html.replace(oldOrcid,'if(p.orcid){'+oldOrcid+'}');
+ if(!html.includes('</style>'))throw Error('No se ha encontrado la hoja de estilo.');
+ html=html.replace('</style>','\n/* v18: balance óptico del mapa histórico en portada */\n.hero-map img{transform:translateX(-1.5%) rotate(-2.3deg);transform-origin:52% 48%}\n</style>');
+ if(!html.includes('Mikel Navarro Satrústegui')||!html.includes('rotate(-2.3deg)'))throw Error('No se han podido verificar todos los cambios.');
+ return html;
+}
+function save(html){const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='livincome-v18-revision.html';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);status('Versión 18 generada. Abre livincome-v18-revision.html desde Descargas para revisarla.');}
+async function processText(t){try{save(patch(t));}catch(e){status('No se ha podido completar la generación: '+e.message,true);}finally{$('generate').disabled=false;}}
+$('generate').addEventListener('click',async()=>{$('generate').disabled=true;status('Leyendo la v17 de GitHub…');try{const r=await fetch(SOURCE,{cache:'no-store'});if(!r.ok)throw Error('Error HTTP '+r.status);const text=await r.text();if(text.length<100000)throw Error('La descarga no parece completa.');await processText(text);}catch(e){status('No se ha podido descargar la v17: '+e.message+'. Prueba con «O elegir una v17 local».',true);$('generate').disabled=false;}});
+$('upload').addEventListener('change',async e=>{const f=e.target.files?.[0];if(f){status('Procesando archivo local…');await processText(await f.text());}});
+</script>
+</body>
+</html>
